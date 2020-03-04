@@ -1,0 +1,4 @@
+.ipynb_checkpoints
+.ipynb_checkpoints/*
+BST_tutorial/BST_data/**/*.dat
+SST_tutorial/SST_data/**/*.dat

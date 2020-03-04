@@ -1,0 +1,101 @@
+
+  Run  20170908-083511 % #  Run start script /localhome/lofarsys/kbt/experiments/rcu357_1beam/start.bash
+  Run  20170908-083511 % #!/bin/bash
+  Run  20170908-083511 % #
+  Run  20170908-083511 % # start.bash
+  Run  20170908-083511 % #
+  Run  20170908-083511 % # This get the experiment started.
+  Run  20170908-083511 % #
+  Run  20170908-083511 % # Author: Derek McKay-Bukowski and Richard Fallows
+  Run  20170908-083511 % # Date: 02-Jun-2013
+  Run  20170908-083511 % #
+  Run  20170908-083511 % wall Starting up the system in RCU mode 357
+  Run  20170908-083511 % echo "KBT_DATAPATH = $KBT_DATAPATH" >> $KBT_OBSNOTES
+KBT_DATAPATH = /localhome/data/kbt/rcu357_1beam/2017.09.08
+  Run  20170908-083511 % #  Make some copies of other useful configuration files
+  Run  20170908-083511 % cp /opt/lofar/etc/CalServer.conf $KBT_DATAPATH/CalServer.orig
+  Run  20170908-083511 % cp /opt/lofar/etc/AntennaField.conf $KBT_DATAPATH/
+  Run  20170908-083511 % cp /opt/lofar/etc/Attenuation.conf $KBT_DATAPATH/
+  Run  20170908-083511 % cp /opt/lofar/etc/iHBADeltas.conf $KBT_DATAPATH/
+  Run  20170908-083511 % ORIGLEVEL=$(swlevel -s | awk '{ print $5}')
+  Run  20170908-083511 % #  Start up the main drivers
+  Run  20170908-083511 % sleep 3
+  Run  20170908-083514 % swlevel 3
+  Run  20170908-083704 % sleep 10
+  Run  20170908-083714 % #if [[ $ORIGLEVEL -lt 3 ]]; then echo "Waiting for RSP boards to initialise"; sleep 110; fi
+  Run  20170908-083714 % # Set 8-bit mode
+  Run  20170908-083714 % echo "Setting bitmode to 8..."
+  Run  20170908-083714 % rspctl --bitmode=8
+  Run  20170908-083714 % sleep 10
+  Run  20170908-083724 % # Read parameters:
+  Run  20170908-083724 % POINTING=`cat $KBT_EXPTROOT/$KBT_EXPTNAME/parameters/Sun`
+  Run  20170908-083724 % SOURCE=`ls -l $KBT_EXPTROOT/$KBT_EXPTNAME/parameters/Sun |  awk '{print $11}'`
+  Run  20170908-083724 % echo "Setting beam 1 to $SOURCE with pointing direction: $POINTING"
+  Run  20170908-083724 % echo "Setting beam 1 to $SOURCE with pointing direction: $POINTING" >> $KBT_OBSNOTES
+Setting beam 1 to  with pointing direction: 0.0,0.0,SUN
+  Run  20170908-083724 % DURATION=`cat $KBT_EXPTROOT/$KBT_EXPTNAME/parameters/duration`
+  Run  20170908-083724 % echo "Setting observation duration: $DURATION"
+  Run  20170908-083724 % echo "Setting observation duration: $DURATION" >> $KBT_OBSNOTES
+Setting observation duration: 43200
+  Run  20170908-083725 % #  Setting up beamlets using pointing direction specified in KBT_POINTINGS file.
+  Run  20170908-083725 % echo "# Detecting core/remote/international station"
+  Run  20170908-083725 % STATIONTYPE=`hostname | awk '{ print substr($0,1,2) }'`
+  Run  20170908-083725 % if [[ ($STATIONTYPE != "CS") && ($STATIONTYPE != "RS") ]]; then STATIONTYPE="INT"; fi
+  Run  20170908-083725 % echo "$STATIONTYPE detected"
+  Run  20170908-083725 % LBARCUS=`cat $KBT_EXPTROOT/$KBT_EXPTNAME/$STATIONTYPE/lba_rcus`
+  Run  20170908-083725 % HBALORCUS=`cat $KBT_EXPTROOT/$KBT_EXPTNAME/$STATIONTYPE/hba_lo_rcus`
+  Run  20170908-083725 % if [[ $STATIONTYPE != "CS" ]]; then HBAHIRCUS=`cat $KBT_EXPTROOT/$KBT_EXPTNAME/$STATIONTYPE/hba_hi_rcus`; fi
+  Run  20170908-083725 % LBASBS=`cat $KBT_EXPTROOT/$KBT_EXPTNAME/$STATIONTYPE/lba_subbands`
+  Run  20170908-083725 % HBALOSBS=`cat $KBT_EXPTROOT/$KBT_EXPTNAME/$STATIONTYPE/hba_lo_subbands`
+  Run  20170908-083725 % if [[ $STATIONTYPE != "CS" ]]; then HBAHISBS=`cat $KBT_EXPTROOT/$KBT_EXPTNAME/$STATIONTYPE/hba_hi_subbands`; fi
+  Run  20170908-083725 % LBABLTS=`cat $KBT_EXPTROOT/$KBT_EXPTNAME/$STATIONTYPE/lba_beamlets`
+  Run  20170908-083725 % HBALOBLTS=`cat $KBT_EXPTROOT/$KBT_EXPTNAME/$STATIONTYPE/hba_lo_beamlets`
+  Run  20170908-083725 % if [[ $STATIONTYPE != "CS" ]]; then HBAHIBLTS=`cat $KBT_EXPTROOT/$KBT_EXPTNAME/$STATIONTYPE/hba_hi_beamlets`; fi
+  Run  20170908-083725 % HBAANTSET=`cat $KBT_EXPTROOT/$KBT_EXPTNAME/$STATIONTYPE/hba_antennaset`
+  Run  20170908-083725 % if [[ $STATIONTYPE == "CS" ]]; then echo "Setting serdes splitter..."; rspctl --splitter=1; sleep 10; fi
+  Run  20170908-083725 % if [[ $STATIONTYPE == "CS" ]]; then LBAMODE=1; fi
+  Run  20170908-083725 % if [[ $STATIONTYPE != "CS" ]]; then LBAMODE=3; fi
+  Run  20170908-083725 % echo "LBA Mode: $LBAMODE"
+  Run  20170908-083725 % echo "nohup beamctl --antennaset=LBA_OUTER --rcus=$LBARCUS --rcumode=$LBAMODE --subbands=$LBASBS --beamlets=$LBABLTS --digdir=$POINTING > $KBT_DATAPATH/beamctl.log"
+  Run  20170908-083725 % echo "nohup beamctl --antennaset=$HBAANTSET --rcus=$HBALORCUS --rcumode=5 --subbands=$HBALOSBS --beamlets=$HBALOBLTS --anadir=$POINTING --digdir=$POINTING > $KBT_DATAPATH/beamctl.log"
+  Run  20170908-083725 % echo "nohup beamctl --antennaset=$HBAANTSET --rcus=$HBAHIRCUS --rcumode=7 --subbands=$HBAHISBS --beamlets=$HBAHIBLTS --anadir=$POINTING --digdir=$POINTING >$KBT_DATAPATH/beamctl.log"
+  Run  20170908-083725 % nohup beamctl --antennaset=LBA_OUTER --rcus=$LBARCUS --rcumode=$LBAMODE --subbands=$LBASBS --beamlets=$LBABLTS --digdir=$POINTING > $KBT_DATAPATH/beamctl.log 2>&1 &
+  Run  20170908-083725 % sleep 10
+  Run  20170908-083735 % rspctl --datastream=0
+  Run  20170908-083737 % sleep 2
+  Run  20170908-083739 % nohup beamctl --antennaset=$HBAANTSET --rcus=$HBALORCUS --rcumode=5 --subbands=$HBALOSBS --beamlets=$HBALOBLTS --anadir=$POINTING --digdir=$POINTING > $KBT_DATAPATH/beamctl.log 2>&1 &
+  Run  20170908-083739 % sleep 10
+  Run  20170908-083749 % rspctl --datastream=0
+  Run  20170908-083751 % sleep 2
+  Run  20170908-083753 % if [[ $STATIONTYPE != "CS" ]]; then `nohup beamctl --antennaset=$HBAANTSET --rcus=$HBAHIRCUS --rcumode=7 --subbands=$HBAHISBS --beamlets=$HBAHIBLTS --anadir=$POINTING --digdir=$POINTING >$KBT_DATAPATH/beamctl.log 2>&1 &`; fi
+  Run  20170908-083753 % sleep 10
+  Run  20170908-083803 % rspctl --datastream=0
+  Run  20170908-083805 % sleep 2
+  Run  20170908-083807 % #  Starting data recording (SST, BST, ACC)
+  Run  20170908-083807 % nohup rspctl --statistics=beamlet --duration=43200 --integration=1 --directory=$KBT_DATAPATH > $KBT_DATAPATH/rspctl_beamlet.log 2>&1 &
+  Run  20170908-083807 % sleep 2
+  Run  20170908-083809 % rspctl --datastream=0
+  Run  20170908-083811 % sleep 2
+  Run  20170908-083813 % # End of start.bash script
+
+  Run  20170908-192500 % #  Run stop script /localhome/lofarsys/kbt/experiments/rcu357_1beam/stop.bash
+  Run  20170908-192500 % #!/bin/bash
+  Run  20170908-192500 % #
+  Run  20170908-192500 % # stop.bash
+  Run  20170908-192500 % #
+  Run  20170908-192500 % # Terminate the experiment
+  Run  20170908-192500 % #
+  Run  20170908-192500 % # Author: Richard Fallows
+  Run  20170908-192500 % # Date: 24-01-2014
+  Run  20170908-192500 % #
+  Run  20170908-192500 % SWLEVEL=`swlevel -S`
+  Run  20170908-192500 % if [ "$SWLEVEL" == "6" ]; then echo "DANGER: Experiment may be running.  No action taken."; exit 0 ; fi
+  Run  20170908-192500 % wall "Terminating experiment '$KBT_EXPTNAME'"
+  Run  20170908-192500 % swlevel 2
+  Run  20170908-192501 % sleep 10
+  Run  20170908-192511 % killall beamctl
+  Run  20170908-192511 % killall rspctl
+  Run  20170908-192511 % sleep 10
+  Run  20170908-192521 % swlevel 0
+  Run  20170908-192617 % wall System ready in swlevel 0
+  Run  20170908-192617 % # End of stop.bash script
